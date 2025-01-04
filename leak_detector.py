@@ -134,7 +134,7 @@ def run(model: str, max_results: int, score_threshold: float,
         else:
           faucet_runtime=0
         classification_result_list.clear()
-        if faucet_runtime==30:
+        if faucet_runtime==600:
           print("ALERT: YOUR FAUCET HAS BEEN RUNNING FOR 10 MINUTES")
   else:
     faucet_runtime=0
