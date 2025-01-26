@@ -37,8 +37,8 @@ def run(model: str, max_results: int, score_threshold: float,
   if a_file_name != None :
     a_file = open(a_file_name,'wb')
 
-  if (overlapping_factor <= 0) or (overlapping_factor >= 1.0):
-    raise ValueError('Overlapping factor must be between 0 and 1.')
+  if (overlapping_factor < 0) or (overlapping_factor >= 1.0):
+    raise ValueError('Overlapping factor must be between 0.0 and 0.9')
 
   if (score_threshold < 0) or (score_threshold > 1.0):
     raise ValueError('Score threshold must be between (inclusive) 0 and 1.')
@@ -66,7 +66,7 @@ def run(model: str, max_results: int, score_threshold: float,
   audio_format = containers.AudioDataFormat(num_channels, sample_rate)
   record = audio_record.AudioRecord(num_channels, sample_rate, buffer_size)
   audio_data = containers.AudioData(buffer_size, audio_format)
-  
+
   # We'll try to run inference every interval_between_inference seconds.
   # This is usually half of the model's input length to create an overlapping
   # between incoming audio segments to improve classification accuracy.
@@ -83,7 +83,7 @@ def run(model: str, max_results: int, score_threshold: float,
     faucet_runtime=0
     last_analysis_time=0
     timer_start = time.time()
-    
+
     # Loop until the total runtime has been fulfilled.
     while (time.time()-timer_start) <= total_runtime:
       # Wait until at least interval_between_inference seconds has passed since
@@ -102,12 +102,12 @@ def run(model: str, max_results: int, score_threshold: float,
         a_file.write(data.tobytes()) 
 
       audio_data.load_from_array(data)
-      classifier.classify_async(audio_data, round(last_inference_time * 1000))
+      classifier.classify_async(audio_data, time.time_ns() // 1_000_000)
 
       # Plot the classification results.
       if classification_result_list:
         plotter.plot(classification_result_list[-1])
-        
+      
 
       if last_analysis_time==0:
         last_analysis_time=now
@@ -198,8 +198,6 @@ def run(model: str, max_results: int, score_threshold: float,
               print("ALERT: YOUR FAUCET HAS BEEN RUNNING FOR 10 MINUTES")
 
   a_file.close()
-    
-    
 
 def main():
   parser = argparse.ArgumentParser(
@@ -242,6 +240,7 @@ def main():
 
   run(args.model, int(args.maxResults), float(args.scoreThreshold),
       float(args.overlappingFactor), str(args.audio_save_file_name), str(args.upload_file_name), int(args.runtime))
+
 
 if __name__ == '__main__':
   main()
